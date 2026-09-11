@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "928631541559",
+    "project_id": "b3st-food",
+    "storage_bucket": "b3st-food.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:928631541559:android:c1b83110af1c1e5e6a14b2",
+        "android_client_info": {
+          "package_name": "com.example.b3st_food"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-si55QXAd8-F-finvaFo3Cidv-PUoa24"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

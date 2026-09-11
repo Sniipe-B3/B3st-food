@@ -1,0 +1,9 @@
+# This is a generated file; do not edit or check into version control.
+cloud_firestore=/Users/ronymrl/.pub-cache/hosted/pub.dev/cloud_firestore-6.3.0/
+cloud_firestore_web=/Users/ronymrl/.pub-cache/hosted/pub.dev/cloud_firestore_web-5.3.0/
+cloud_functions=/Users/ronymrl/.pub-cache/hosted/pub.dev/cloud_functions-6.2.0/
+cloud_functions_web=/Users/ronymrl/.pub-cache/hosted/pub.dev/cloud_functions_web-5.1.5/
+firebase_auth=/Users/ronymrl/.pub-cache/hosted/pub.dev/firebase_auth-6.4.0/
+firebase_auth_web=/Users/ronymrl/.pub-cache/hosted/pub.dev/firebase_auth_web-6.1.5/
+firebase_core=/Users/ronymrl/.pub-cache/hosted/pub.dev/firebase_core-4.7.0/
+firebase_core_web=/Users/ronymrl/.pub-cache/hosted/pub.dev/firebase_core_web-3.6.0/
