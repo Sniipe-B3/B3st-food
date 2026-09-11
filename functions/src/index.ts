@@ -50,3 +50,52 @@ export const chatAIAssistant = onCall(
     }
   }
 );
+
+// Fonction pour générer une recette basée sur les ingrédients
+export const generateRecipe = onCall(
+  {
+    secrets: ["AI_API_KEY"],
+  },
+  async (request) => {
+    try {
+      const ingredients = request.data.ingredients as string[];
+      const guests = request.data.guests as number || 2;
+      const utensils = (request.data.utensils as string[]) || [];
+      
+      const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
+      
+      const utensilsText = utensils.length > 0 ? `Voici les ustensiles que je possède : ${utensils.join(", ")}.` : '';
+
+      const prompt = `Tu es un chef cuisinier de renommée mondiale. 
+Voici les ingrédients dont je dispose : ${ingredients.join(", ")}.
+${utensilsText}
+Propose-moi une seule recette détaillée pour ${guests} personne(s), étape par étape, qui utilise en priorité ces ingrédients et ustensiles. 
+Ton retour doit être un JSON valide sous ce format :
+{
+  "title": "Nom de la recette",
+  "prepTime": "Temps de préparation",
+  "ingredients": ["Texte Ingrédient 1", "Texte Ingrédient 2"],
+  "steps": ["Étape 1", "Étape 2"],
+  "usedIngredients": [
+    { "name": "Nom de l'ingrédient issu de ma liste", "quantityUsed": 3 }
+  ]
+}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+
+      return { 
+        result: response.text 
+      };
+
+    } catch (error) {
+      logger.error("Erreur lors de la génération de recette :", error);
+      throw new HttpsError("internal", "Impossible de générer la recette.");
+    }
+  }
+);

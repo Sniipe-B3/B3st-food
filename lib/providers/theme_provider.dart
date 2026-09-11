@@ -1,18 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Provider pour gérer l'état du thème (Dark/Light mode)
+import 'package:shared_preferences/shared_preferences.dart';
+
+// On utilise un bool? pour savoir si l'état initial a été chargé.
 final themeProvider = StateNotifierProvider<ThemeNotifier, bool>((ref) {
   return ThemeNotifier();
 });
 
 class ThemeNotifier extends StateNotifier<bool> {
-  // true = Dark Mode, false = Light Mode
-  // La valeur initiale est false (Light Mode par défaut)
-  ThemeNotifier() : super(false);
+  static const _key = 'darkMode';
 
-  // Méthode pour basculer entre les deux thèmes
-  void toggleTheme() {
+  ThemeNotifier() : super(false) {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool(_key) ?? false;
+    state = isDark;
+  }
+
+  Future<void> toggleTheme() async {
     state = !state;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, state);
   }
 }
 

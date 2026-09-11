@@ -1,0 +1,1 @@
+{"inputs":["/workspaces/B3st-food/web/*/index.html","/workspaces/B3st-food/web/flutter_bootstrap.js","/home/codespace/flutter/bin/cache/engine.stamp"],"outputs":["/workspaces/B3st-food/build/web/*/index.html","/workspaces/B3st-food/build/web/flutter_bootstrap.js"],"buildKey":"[{\"compileTarget\":\"dart2js\",\"renderer\":\"canvaskit\",\"mainJsPath\":\"main.dart.js\"},{}]"}

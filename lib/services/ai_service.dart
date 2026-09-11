@@ -33,5 +33,28 @@ class AiService {
       rethrow;
     }
   }
+
+  /// Demande à Gemini de générer une recette à partir des ingrédients et ustensiles
+  Future<Map<String, dynamic>> generateRecipe(List<String> ingredients, int guests, List<String> utensils) async {
+    try {
+      final callable = _functions.httpsCallable('generateRecipe');
+      
+      final result = await callable.call({
+        'ingredients': ingredients,
+        'guests': guests,
+        'utensils': utensils,
+      });
+
+      final String jsonString = result.data['result'] as String;
+      return jsonDecode(jsonString);
+      
+    } on FirebaseFunctionsException catch (e) {
+      print('Erreur Firebase Functions: ${e.code} - ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('Erreur inconnue: $e');
+      rethrow;
+    }
+  }
 }
 
