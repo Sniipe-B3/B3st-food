@@ -67,17 +67,25 @@ export const generateRecipe = onCall(
       const utensilsText = utensils.length > 0 ? `Voici les ustensiles que je possède : ${utensils.join(", ")}.` : '';
 
       const prompt = `Tu es un chef cuisinier de renommée mondiale. 
-Voici les ingrédients dont je dispose : ${ingredients.join(", ")}.
+Voici les ingrédients dont je dispose, avec leur quantité et unité en stock : 
+${ingredients.join(", ")}.
+
 ${utensilsText}
+
 Propose-moi une seule recette détaillée pour ${guests} personne(s), étape par étape, qui utilise en priorité ces ingrédients et ustensiles. 
+Tu peux utiliser quelques ingrédients mineurs que je n'ai pas en stock (ex: sel, poivre, huile, petites épices) si cela permet d'améliorer la recette. Cependant, n'utilise aucun ingrédient principal hors de mon stock.
+Règle TRÈS importante : pour "usedIngredients", tu dois renvoyer une valeur "quantityUsed" convertie dans l'unité mathématique exacte du stock. Par exemple, si le stock est en grammes et que tu utilises "2 blancs de poulet", estime le poids et mets "quantityUsed" en grammes (ex: 250).
+
 Ton retour doit être un JSON valide sous ce format :
 {
   "title": "Nom de la recette",
   "prepTime": "Temps de préparation",
-  "ingredients": ["Texte Ingrédient 1", "Texte Ingrédient 2"],
+  "ingredients": [
+    { "name": "Nom ingrédient", "quantity": 2, "unit": "pièces", "originalText": "2 blancs de poulet" }
+  ],
   "steps": ["Étape 1", "Étape 2"],
   "usedIngredients": [
-    { "name": "Nom de l'ingrédient issu de ma liste", "quantityUsed": 3 }
+    { "name": "Nom de l'ingrédient issu de ma liste sans la parenthèse du stock", "quantityUsed": 250 }
   ]
 }`;
 

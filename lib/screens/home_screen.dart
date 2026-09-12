@@ -5,64 +5,71 @@ import '../providers/theme_provider.dart';
 import '../providers/stock_provider.dart';
 import '../services/ai_service.dart';
 
-class HomeScreen extends StatefulWidget {
+// Navigation state
+final currentTabProvider = StateProvider<int>((ref) => 0);
+
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(currentTabProvider);
+
+    // Liste des écrans pour chaque onglet
+    final List<Widget> screens = const [
+      StockScreen(),
+      RecipeScreen(),
+      SettingsScreen(),
+    ];
+
+    return screens[currentIndex];
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
-  // Liste des écrans pour chaque onglet
-  final List<Widget> _screens = const [
-    StockScreen(),
-    RecipeScreen(),
-    SettingsScreen(),
-  ];
+class AppDrawer extends ConsumerWidget {
+  const AppDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_currentIndex],
-      // Bouton central (+) affiché uniquement sur l'onglet "Mon Stock" (index 0)
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (context) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                    ),
-                    child: const AddFoodForm(),
-                  ),
-                );
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory),
-            label: 'Mon Stock',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(currentTabProvider);
+    
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.green),
+            child: Text(
+              'B3st-Food',
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.restaurant_menu),
-            label: 'Recettes IA',
+          ListTile(
+            leading: const Icon(Icons.inventory),
+            title: const Text('Mon Stock'),
+            selected: currentIndex == 0,
+            onTap: () {
+              ref.read(currentTabProvider.notifier).state = 0;
+              Navigator.pop(context);
+            },
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Paramètres',
+          ListTile(
+            leading: const Icon(Icons.restaurant_menu),
+            title: const Text('Recettes IA'),
+            selected: currentIndex == 1,
+            onTap: () {
+              ref.read(currentTabProvider.notifier).state = 1;
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Paramètres'),
+            selected: currentIndex == 2,
+            onTap: () {
+              ref.read(currentTabProvider.notifier).state = 2;
+              Navigator.pop(context);
+            },
           ),
         ],
       ),
@@ -88,11 +95,9 @@ class _StockScreenState extends ConsumerState<StockScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {});
-      }
+      setState(() {});
     });
   }
 
@@ -112,8 +117,10 @@ class _StockScreenState extends ConsumerState<StockScreen> with SingleTickerProv
         final frigoItems = stock.where((item) => item.category == 'Frigo').toList();
         final placardItems = stock.where((item) => item.category == 'Placard').toList();
         final congeItems = stock.where((item) => item.category == 'Congélateur').toList();
+        final condiItems = stock.where((item) => item.category == 'Condiments').toList();
 
         return Scaffold(
+          drawer: const AppDrawer(),
           appBar: AppBar(
             title: const Text('Mon Stock'),
             bottom: TabBar(
@@ -123,6 +130,7 @@ class _StockScreenState extends ConsumerState<StockScreen> with SingleTickerProv
                 Tab(text: 'Frigo'),
                 Tab(text: 'Placard'),
                 Tab(text: 'Congél.'),
+                Tab(text: 'Condiments'),
                 Tab(text: 'Ustensiles'),
               ],
             ),
@@ -133,6 +141,7 @@ class _StockScreenState extends ConsumerState<StockScreen> with SingleTickerProv
               _buildList(frigoItems, ref, context),
               _buildList(placardItems, ref, context),
               _buildList(congeItems, ref, context),
+              _buildList(condiItems, ref, context),
               _buildUtensilsList(utensilsStream, ref, context),
             ],
           ),
@@ -146,7 +155,7 @@ class _StockScreenState extends ConsumerState<StockScreen> with SingleTickerProv
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(context).viewInsets.bottom,
                   ),
-                  child: index == 3 ? const AddUtensilForm() : const AddFoodForm(),
+                  child: index == 4 ? const AddUtensilForm() : const AddFoodForm(),
                 ),
               );
             },
@@ -288,7 +297,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
         return;
       }
 
-      final ingredients = selectedItems.map((e) => e.name).toList();
+      final ingredients = selectedItems.map((e) => '${e.name} (Stock: ${e.quantity} ${e.unit})').toList();
       final utensilsValue = ref.read(utensilsStreamProvider).value ?? [];
       final utensils = utensilsValue.map((e) => e.name).toList();
 
@@ -329,7 +338,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
       }
     }
 
-    stockService.addRecipeHistory(title);
+    stockService.addRecipeHistory(title, _guestCount, _recipe!);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Stock mis à jour avec succès !')),
@@ -344,6 +353,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Recettes IA'),
       ),
@@ -367,7 +377,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   Widget _buildConfigForm() {
     final stockValue = ref.watch(stockStreamProvider).value ?? [];
     
-    final categories = ['Frigo', 'Placard', 'Congélateur'];
+    final categories = ['Frigo', 'Placard', 'Congélateur', 'Condiments'];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -451,7 +461,13 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
         const Divider(),
         const Text('Ingrédients :', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         if (_recipe!['ingredients'] is List)
-          ...(_recipe!['ingredients'] as List).map((i) => Text('- $i')),
+          ...(_recipe!['ingredients'] as List).map((i) {
+            if (i is Map) {
+              final text = i['originalText'] ?? '${i['quantity']} ${i['unit']} de ${i['name']}';
+              return Text('- $text');
+            }
+            return Text('- $i');
+          }),
         const SizedBox(height: 16),
         const Text('Préparation :', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         if (_recipe!['steps'] is List)
@@ -486,6 +502,7 @@ class SettingsScreen extends ConsumerWidget {
     final isDarkMode = ref.watch(themeProvider);
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Paramètres'),
       ),
@@ -519,7 +536,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
-            title: const Text('B3st-Food V1.0.8'),
+            title: const Text('B3st-Food V1.0.10'),
             subtitle: const Text('Voir l\'historique des modifications'),
             leading: const Icon(Icons.history),
             onTap: () {
@@ -532,6 +549,10 @@ class SettingsScreen extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text('• V1.0.10 : Nouveau menu latéral (Drawer), onglet Condiments, et recettes favorites.'),
+                        SizedBox(height: 8),
+                        Text('• V1.0.9 : Redimensionnement dynamique des recettes dans l\'historique, correction des soustractions de stock, et fix final du bouton Ustensiles.'),
+                        SizedBox(height: 8),
                         Text('• V1.0.8 : Correctif de l\'ajout d\'ustensiles et ajout de l\'unité Centilitres (cl).'),
                         SizedBox(height: 8),
                         Text('• V1.0.7 : Liste déroulante des ingrédients, historique des recettes cuisinées et correctifs de l\'ajout d\'ustensiles.'),
@@ -591,13 +612,131 @@ class RecipeHistoryScreen extends ConsumerWidget {
               return ListTile(
                 title: Text(item.title),
                 subtitle: Text('Le ${item.date.day}/${item.date.month}/${item.date.year} à ${item.date.hour}:${item.date.minute.toString().padLeft(2, '0')}'),
-                leading: const Icon(Icons.check_circle, color: Colors.green),
+                leading: item.isFavorite 
+                    ? const Icon(Icons.star, color: Colors.amber)
+                    : const Icon(Icons.check_circle, color: Colors.green),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  if (item.recipe != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RecipeHistoryDetailScreen(item: item),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Détails non disponibles pour cette ancienne recette.')),
+                    );
+                  }
+                },
               );
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erreur : $e')),
+      ),
+    );
+  }
+}
+
+class RecipeHistoryDetailScreen extends ConsumerStatefulWidget {
+  final RecipeHistoryItem item;
+
+  const RecipeHistoryDetailScreen({super.key, required this.item});
+
+  @override
+  ConsumerState<RecipeHistoryDetailScreen> createState() => _RecipeHistoryDetailScreenState();
+}
+
+class _RecipeHistoryDetailScreenState extends ConsumerState<RecipeHistoryDetailScreen> {
+  late int _currentGuests;
+  late bool _isFavorite;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentGuests = widget.item.guestCount > 0 ? widget.item.guestCount : 2;
+    _isFavorite = widget.item.isFavorite;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recipe = widget.item.recipe!;
+    final baseGuests = widget.item.guestCount > 0 ? widget.item.guestCount : 2;
+    final ratio = _currentGuests / baseGuests;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.item.title),
+        actions: [
+          IconButton(
+            icon: Icon(_isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
+            onPressed: () {
+              setState(() {
+                _isFavorite = !_isFavorite;
+              });
+              ref.read(stockServiceProvider).toggleRecipeFavorite(widget.item.id, _isFavorite);
+            },
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            recipe['title'] ?? 'Recette',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text('Temps : ${recipe['prepTime'] ?? '?'} - Cuisiné le ${widget.item.date.day}/${widget.item.date.month}/${widget.item.date.year}'),
+          const Divider(),
+          const Text('Ajuster les portions :', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: _currentGuests.toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  label: _currentGuests.toString(),
+                  onChanged: (val) {
+                    setState(() {
+                      _currentGuests = val.toInt();
+                    });
+                  },
+                ),
+              ),
+              Text('$_currentGuests pers.', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text('Ingrédients :', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          if (recipe['ingredients'] is List)
+            ...(recipe['ingredients'] as List).map((i) {
+              if (i is Map) {
+                // Si l'ingrédient a une quantité structurée, on la multiplie par le ratio
+                if (i['quantity'] != null && i['quantity'] is num) {
+                  final double qty = (i['quantity'] as num).toDouble();
+                  final double adjustedQty = qty * ratio;
+                  // Affichage joli sans décimales si c'est un entier
+                  final qtyStr = adjustedQty == adjustedQty.truncateToDouble() 
+                      ? adjustedQty.toInt().toString() 
+                      : adjustedQty.toStringAsFixed(1);
+                  return Text('- $qtyStr ${i['unit'] ?? ''} de ${i['name'] ?? ''}');
+                }
+                final text = i['originalText'] ?? '${i['quantity']} ${i['unit']} de ${i['name']}';
+                return Text('- $text');
+              }
+              return Text('- $i');
+            }),
+          const SizedBox(height: 16),
+          const Text('Préparation :', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          if (recipe['steps'] is List)
+            ...(recipe['steps'] as List).map((s) => Text('- $s')),
+        ],
       ),
     );
   }
@@ -750,6 +889,7 @@ class _AddFoodFormState extends ConsumerState<AddFoodForm> {
               DropdownMenuItem(value: 'Frigo', child: Text('Frigo')),
               DropdownMenuItem(value: 'Placard', child: Text('Placard')),
               DropdownMenuItem(value: 'Congélateur', child: Text('Congélateur')),
+              DropdownMenuItem(value: 'Condiments', child: Text('Condiments')),
             ],
             onChanged: (value) {
               if (value != null) setState(() => _selectedCategory = value);

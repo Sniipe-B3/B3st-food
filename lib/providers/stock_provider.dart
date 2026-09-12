@@ -63,8 +63,18 @@ class RecipeHistoryItem {
   final String id;
   final String title;
   final DateTime date;
+  final int guestCount;
+  final Map<String, dynamic>? recipe;
+  final bool isFavorite;
 
-  RecipeHistoryItem({required this.id, required this.title, required this.date});
+  RecipeHistoryItem({
+    required this.id, 
+    required this.title, 
+    required this.date,
+    this.guestCount = 2,
+    this.recipe,
+    this.isFavorite = false,
+  });
 
   factory RecipeHistoryItem.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -72,6 +82,9 @@ class RecipeHistoryItem {
       id: doc.id,
       title: data['title'] ?? '',
       date: (data['date'] as Timestamp).toDate(),
+      guestCount: data['guestCount'] ?? 2,
+      recipe: data['recipe'] as Map<String, dynamic>?,
+      isFavorite: data['isFavorite'] ?? false,
     );
   }
 }
@@ -175,11 +188,18 @@ class StockService {
     await _utensilsCollection?.doc(id).delete();
   }
 
-  Future<void> addRecipeHistory(String title) async {
+  Future<void> addRecipeHistory(String title, int guestCount, Map<String, dynamic> recipe) async {
     await _recipeHistoryCollection?.add({
       'title': title,
       'date': FieldValue.serverTimestamp(),
+      'guestCount': guestCount,
+      'recipe': recipe,
+      'isFavorite': false,
     });
+  }
+
+  Future<void> toggleRecipeFavorite(String id, bool isFavorite) async {
+    await _recipeHistoryCollection?.doc(id).update({'isFavorite': isFavorite});
   }
 }
 
